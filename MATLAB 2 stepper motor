@@ -1,0 +1,21 @@
+%Run with ardunios with 2 stepper motor code downloaded onto them
+
+
+clc;
+clear;
+clear s;
+
+
+s = serialport('/dev/tty.usbmodem1101', 9600);
+
+pause (2);
+
+
+steps_for_1 = 2000;
+steps_for_2 = -2000; 
+
+
+Multiple_Stepper_String = append("1,",int2str(steps_for_1),",","2,",int2str(steps_for_2));
+
+write(s,Multiple_Stepper_String, 'string');
+
