@@ -1,0 +1,46 @@
+#include <Stepper.h>
+
+#include <stepper.h>
+
+String Stepper_1;
+String Stepper_1_Steps;
+String Stepper_2;
+String Stepper_2_Steps;
+
+const int stepsPerRevolution = 2052; 
+
+Stepper myStepper1 = Stepper(stepsPerRevolution, 8, 10, 9, 11);
+Stepper myStepper2 = Stepper(stepsPerRevolution, 4, 6, 5, 7);
+
+
+
+void setup() {
+  // put your setup code here, to run once:
+Serial.begin(9600);
+myStepper1.setSpeed(10);
+myStepper2.setSpeed(10);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  if (Serial.available()>0)
+  {
+    Stepper_1 = Serial.readStringUntil(',');
+    Stepper_1_Steps = Serial.readStringUntil(',');
+    int Steps_for_Stepper_1 = Stepper_1_Steps.toInt();
+
+    myStepper1.step(Steps_for_Stepper_1);
+    Steps_for_Stepper_1 = 0;
+
+    Stepper_2 = Serial.readStringUntil(',');
+    Stepper_2_Steps = Serial.readStringUntil(',');
+    int Steps_for_Stepper_2 = Stepper_2_Steps.toInt();
+
+   myStepper2.step(Steps_for_Stepper_2);
+   Steps_for_Stepper_2 = 0;
+
+  }
+
+}
+
+
