@@ -1,0 +1,6 @@
+%EGR 103 board game code
+
+import Namespace VisionFunction
+
+vision = import;
+
