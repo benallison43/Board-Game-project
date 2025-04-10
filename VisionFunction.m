@@ -1,4 +1,4 @@
-function VisionFunction
+function dicenum = VisionFunction()
 
 % Image Processing HEADER COMMENT 
 % Authors: Ben Allison
