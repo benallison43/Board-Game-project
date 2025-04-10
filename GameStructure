@@ -1,0 +1,12 @@
+clc;         %Clear the command window
+clear;      %Clear the workspace
+clear s;   %Clear any existing connections to the serial port
+s = serialport('COM3',9600);
+pause(2);  %Pause for 2 seconds to allow the connection to be established
+ 
+distance = 2052;
+write(s,int2str(distance),'string');                                                        
+pause(5);                               
+ 
+distance = -2052;
+write(s,int2str(distance),'string');
