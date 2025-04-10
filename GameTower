@@ -1,0 +1,34 @@
+c = arduino();  % Add 'COMx' if needed
+ 
+% Connect servo motors
+servo1 = servo(c, 'D3');  % First servo on pin D3
+servo2 = servo(c, 'D5');  % Second servo on pin D5
+ 
+% Initial positions
+writePosition(servo1, 0.5);  % Middle (90 degrees)
+writePosition(servo2, 0.5);  % Middle (90 degrees)
+pause(1);  % Wait for movement
+ 
+% Step 1: Move servo1 +90° (to 180° total)
+writePosition(servo1, 1.0);  % 180 degrees
+pause(1);
+ 
+% Step 2: Move servo2 +60° (to 150° total)
+writePosition(servo2, 0.8333);  % ~150 degrees (60° from center)
+pause(1);
+ 
+% Step 3: Move servo1 -90° (back to 90° total)
+writePosition(servo1, 0.5);  % Back to center
+pause(1);
+ 
+% Step 4: Move servo1 +90° again (to 180° total)
+writePosition(servo1, 1.0);
+pause(1);
+ 
+% Step 5: Move servo2 -60° (back to 90° total)
+writePosition(servo2, 0.5);
+pause(1);
+ 
+% Step 6: Move servo1 -90° again (to 90° total)
+writePosition(servo1, 0.5);
+pause(1);
