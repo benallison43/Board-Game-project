@@ -12,6 +12,7 @@ clc
 % PROCESSING IS DONE TO SHOW THE VISUAL OF THE BOARD AND THE PROCESSING
 % SHOWN HERE IS NOT NECESSARY FOR YOUR PROJECTS)
 % *******************************************************************
+%{
 I = imread('Game Board.png');
 % Find circles on the board with a radius range of 10-50 pixels
 [centers_game,radii_game] = imfindcircles(I,[10,50],"ObjectPolarity","dark");
@@ -37,10 +38,11 @@ Sorted_Spots(:,4) = [];
 % circle) array of our spots. Ordering is clockwise and spot #1 is about
 % 9:30 on the board. 
 Space_info = Sorted_Spots;
-
+%}
 % ********************************************************************
 % Put Annotations on the Board
 % *******************************************************************
+%{
 Labeled_Board = insertText(I,[45 240],"1","BoxOpacity",0,"FontSize",35,"AnchorPoint","Center");
 Labeled_Board = insertText(Labeled_Board,[95 142],"2","BoxOpacity",0,"FontSize",35,"AnchorPoint","Center");
 Labeled_Board = insertText(Labeled_Board,[190 65],"3","BoxOpacity",0,"FontSize",35,"AnchorPoint","Center");
@@ -61,14 +63,24 @@ Labeled_Board = insertText(Labeled_Board,[470 240],"DUMP","BoxOpacity",0,"FontSi
 Labeled_Board = insertText(Labeled_Board,[470 420],"DUMP","BoxOpacity",0,"FontSize",35,"AnchorPoint","Center");
 Labeled_Board = insertText(Labeled_Board,[95 275],"Start","BoxOpacity",0,"FontSize",22,"AnchorPoint","Center");
 Labeled_Board = insertText(Labeled_Board,[95 385],"Home","BoxOpacity",0,"FontSize",22,"AnchorPoint","Center");
+%}
 %% ********************************************************************
 % Initial set-up of the array that tracks the game
 % *******************************************************************
 % Start by creating the array which keeps track of where everything is.
 % Instead of generating the board setup in MATLAB I created it in excel
-% it is called StartingBoardSetup.xlsx.  I will import it. 
+% it is called StartingBoardSetup.xlsx.  I will import it.
+clear s t c b;
+%initializing
+s = serialport('COM3',9600); %game structure
+pause(2);
+t = serialport('COM3', 9600); %game board
+b = arduino('COM4');
+pause(2);
+c = arduino();  % game piece mover
+pause(2);
 BoardSetup=readmatrix('StartingBoardSetup.xlsx');
-
+servo = servo(b, 'D9', 'MinPulseDuration', 700*10^-6, 'MaxPulseDuration', 2300*10^-6); %for dump
 % Create a fourth column that is the sum of columns 2 and 3 so that we know
 % if a space is available
 
@@ -180,6 +192,7 @@ end
 
 while MoveComplete==0
 Piece2Move=input('Enter the position of the piece you want to move, if starting a game piece enter 1  \n ');
+
 if BoardSetup(Piece2Move,ColOfInterest)==1 && (Piece2Move + dice)>=14
         BoardSetup(Piece2Move,ColOfInterest)=0;
         if ColOfInterest==3
@@ -194,12 +207,24 @@ elseif BoardSetup(Piece2Move,ColOfInterest)==1&& BoardSetup((Piece2Move+dice),4)
     fprintf('Valid Move, moving piece now \n');
     BoardSetup(Piece2Move,ColOfInterest)=0;
     NewPosition=Piece2Move+dice;
+
+    %moving piece and board
+    pickUp(); %pick up piece
+    rotate(NewPosition); %move game board to new position
+    setDown(); %put down piece
+
     BoardSetup(NewPosition,ColOfInterest)=1;
     MoveComplete=1;
 elseif Piece2Move==1 && BoardSetup((Piece2Move+dice),4)==0
     fprintf('Valid Move, moving piece now \n');
      BoardSetup(Piece2Move,ColOfInterest)=0;
     NewPosition=Piece2Move+dice;
+
+    %moving piece and board
+    pickUp(); %pick up piece
+    rotate(NewPosition); %rotate board
+    setDown(); %put down piece
+
     BoardSetup(NewPosition,ColOfInterest)=1;
     MoveComplete=1;
  else   
@@ -230,6 +255,7 @@ if Pos3Rand==2
         PlaceHolder=BoardSetup(3,2:3);
         BoardSetup(3,2:3)=BoardSetup(4,2:3);
         BoardSetup(4,2:3)=PlaceHolder;
+        swap();
         fprintf('swapped positions 3 and 4 \n');
     end
 end
@@ -241,6 +267,7 @@ if Pos11Rand==2
         PlaceHolder=BoardSetup(11,2:3);
         BoardSetup(11,2:3)=BoardSetup(12,2:3);
         BoardSetup(12,2:3)=PlaceHolder;
+        swap();
         fprintf('swapped positions 11 & 12 \n');
     end
 end
@@ -252,6 +279,7 @@ Pos6Rand=randi(4);
 if Pos6Rand==2
     % Dump the game piece and it goes back to start
     BoardSetup(6,2:3)=0;
+    dump();
     fprintf('Position 6 has been dumped \n');
 end
 
@@ -259,6 +287,7 @@ Pos9Rand=randi(4);
 if Pos9Rand==2
     % Dump the game piece and it goes back to start
     BoardSetup(9,2:3)=0;
+    dump();
     fprintf('Position 9 has been dumped \n');
 end
 
@@ -291,3 +320,59 @@ end
 % ******************************************************************
 fprintf('Game Over!  Player 1 has %d goals, Player 2 has %d goals! \n',ScorePlayer1, ScorePlayer2);
 
+
+%rotates board to allow game piece to be moved
+function rotate(NewPosition) 
+    distance = NewPosition * 171; %distance needed to rotate
+    write(s,int2str(distance),'string');                                                        
+    pause(5);
+end
+
+%picks up piece
+function pickUp()
+    writePosition(servo1, 0);  % Middle (90 degrees)
+    writePosition(servo2, 0);  % Middle (90 degrees)
+    pause(1);  % Wait for movement
+
+    % Step 1: Go Down
+    writePosition(servo1, .7);  % 180 degrees
+    pause(1);
+ 
+    % Step 2: Twist
+    writePosition(servo2, 0.45);  % ~150 degrees (60° from center)
+    pause(1);
+ 
+    % Step 3: Go Up
+    writePosition(servo1, 0);  % Back to center
+    pause(1);
+end
+
+%sets down piece
+function setDown()
+    % Step 4: Go down
+    writePosition(servo1, .7);
+    pause(1);
+ 
+    % Step 5: Twist 
+    writePosition(servo2, 0);
+    pause(1);
+ 
+    % Step 6: Go back up
+    writePosition(servo1, 0);
+    pause(1);
+end
+
+function swap()
+    steps_for_1 = 1026;
+    steps_for_2 = -1048;
+    Multiple_Stepper_String = append("1, ",int2str(steps_for_1), ", ", "2, ", int2str(steps_for_2));
+    write(s,Multiple_Stepper_String,'string');
+end
+
+function dump()
+    writePosition(servo, 0);
+    pause(2);
+    writePosition(servo, 0.5);
+    pause(2)
+    writePosition(servo, 0);
+end
